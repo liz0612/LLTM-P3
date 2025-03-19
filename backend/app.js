@@ -1,50 +1,38 @@
-import express from "express";
-import cors from "cors";
-import { connectDB } from "./DB/Database.js";
-import bodyParser from "body-parser";
-import dotenv from "dotenv";
-import helmet from "helmet";
-import morgan from "morgan";
-import transactionRoutes from "./Routers/Transactions.js";
-import userRoutes from "./Routers/userRouter.js";
-import path from "path";
+import dotenv from 'dotenv';
+dotenv.config();  // This loads the .env variables into `process.env`
 
-dotenv.config({ path: "./config/config.env" });
+import express from 'express';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import morgan from 'morgan';
+import helmet from 'helmet';
+import moment from 'moment';
+import mongoose from 'mongoose';
+
+// Create an express app
 const app = express();
 
-const port = process.env.PORT;
+// Middleware setup
+app.use(cors());
+app.use(cookieParser());
+app.use(morgan('dev')); // logs HTTP requests to the console
+app.use(helmet()); // security middleware to set various HTTP headers
 
-connectDB();
+// Body parser
+app.use(express.json()); // parses incoming requests with JSON payloads
 
-const allowedOrigins = [
-  "https://main.d1sj7cd70hlter.amplifyapp.com",
-  "https://expense-tracker-app-three-beryl.vercel.app",
-  // add more origins as needed
-];
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log('MongoDB connected'))
+    .catch((err) => console.log('MongoDB connection error:', err));
 
-// Middleware
-app.use(express.json());
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-  })
-);
-app.use(helmet());
-app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
-app.use(morgan("dev"));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-
-// Router
-app.use("/api/v1", transactionRoutes);
-app.use("/api/auth", userRoutes);
-
-app.get("/", (req, res) => {
-  res.send("Hello World!");
+// Example route
+app.get('/', (req, res) => {
+    res.send('Hello World!');
 });
 
-app.listen(port, () => {
-  console.log(`Server is listening on http://localhost:${port}`);
+// Start the server
+const PORT = process.env.PORT || 3000;  // Changed from 5000 to 3000
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
