@@ -1,4 +1,3 @@
-// LoginPage.js
 import { useCallback, useEffect, useState } from "react";
 import { Container, Row, Col, Form, Button } from "react-bootstrap";
 import Particles from "react-tsparticles";
@@ -8,16 +7,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
-import { loginAPI } from "../../utils/ApiRequest";
 
 const Login = () => {
   const navigate = useNavigate();
-
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (localStorage.getItem("user")) {
-      navigate("/");
+      navigate("/"); // Redirect to home if user is already logged in
     }
   }, [navigate]);
 
@@ -45,33 +42,36 @@ const Login = () => {
     e.preventDefault();
 
     const { email, password } = values;
-
     setLoading(true);
 
-    const { data } = await axios.post(loginAPI, {
-      email,
-      password,
-    });
+    try {
+      const response = await axios.post("http://localhost:3000/login", {
+        email,
+        password,
+      });
 
-    if (data.success === true) {
-      localStorage.setItem("user", JSON.stringify(data.user));
-      navigate("/");
-      toast.success(data.message, toastOptions);
-      setLoading(false);
-    } else {
-      toast.error(data.message, toastOptions);
+      const data = response.data;
+
+      if (data.success) {
+        // Store the user data and token in local storage
+        localStorage.setItem("user", JSON.stringify(data.user));
+        navigate("/"); // Redirect to home page after successful login
+        toast.success(data.message, toastOptions);
+      } else {
+        toast.error(data.message, toastOptions);
+      }
+    } catch (error) {
+      toast.error("Something went wrong. Please try again.", toastOptions);
+    } finally {
       setLoading(false);
     }
   };
 
   const particlesInit = useCallback(async (engine) => {
-    // console.log(engine);
     await loadFull(engine);
   }, []);
 
-  const particlesLoaded = useCallback(async (container) => {
-    // await console.log(container);
-  }, []);
+  const particlesLoaded = useCallback(async (container) => {}, []);
 
   return (
     <div style={{ position: "relative", overflow: "hidden" }}>
@@ -153,8 +153,8 @@ const Login = () => {
                 className="text-center"
               />
             </h1>
-            <h2 className="text-white text-center ">Login</h2>
-            <Form>
+            <h2 className="text-white text-center">Login</h2>
+            <Form onSubmit={handleSubmit}>
               <Form.Group controlId="formBasicEmail" className="mt-3">
                 <Form.Label className="text-white">Email address</Form.Label>
                 <Form.Control
@@ -192,8 +192,7 @@ const Login = () => {
 
                 <Button
                   type="submit"
-                  className=" text-center mt-3 btnStyle"
-                  onClick={!loading ? handleSubmit : null}
+                  className="text-center mt-3 btnStyle"
                   disabled={loading}
                 >
                   {loading ? "Signin…" : "Login"}
